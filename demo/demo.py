@@ -6,6 +6,7 @@ from pylsl import StreamInlet
 from time import monotonic, sleep
 import queue
 import time
+import serial
 
 kmeans_model = None
 qsize = 30
@@ -55,6 +56,13 @@ def main():
     Thres = []
     Time = []
     collect_data = False
+    import argparse
+    parser = argparse.ArgumentParser(description="CECNL BCI 2023 Car Demo")
+    parser.add_argument("port_num", type=str, help="Arduino bluetooth serial port")
+    args = parser.parse_args()
+
+    ser = serial.Serial(args.port_num, 9600, timeout=1, write_timeout=1)
+    
     while True:
         sample, timestamp = inlet.pull_chunk()
         if timestamp:
@@ -69,15 +77,17 @@ def main():
                 Thres.append(ratio)
                 Time.append(end - start)
             if end - start > 30 and not collect_data:
-                avg_thres = kmeans_f2(np.array(Thres), ap.array(Time))
+                avg_thres = kmeans_f2(np.array(Thres), np.array(Time))
                 print("Average Threshold:", avg_thres)
                 collect_data = True
 
             if collect_data:
                 if ratio > avg_thres and q.qsize() == qsize:
                     print("move forward", ratio)
+                    ser.write(b'1')
                 else:
                     print("stop ", ratio)
+                    ser.write(b'0')
 
         time.sleep(0.2)
    

@@ -34,7 +34,7 @@ def main():
     root = BasicRecv(4, selcStream.srate) #############
 
     # block1 = PreProcessing(2, 40, selcStream.srate, 128.0, parent=root) # 1, 40
-    block1 = PreProcessing(8, 13, selcStream.srate, 128.0, parent=root)
+    block1 = PreProcessing(8, 13, selcStream.srate, 1000.0, parent=root)
 
     # block2 = ChannelNorm(128.0, parent=block1)
     # block3 = CLEEGNing(
@@ -47,8 +47,10 @@ def main():
         pull_kwargs = {"timeout": 1, "max_samples": math.ceil(0.6 * selcStream.srate)}
         chunk, timestamps = inlet.pull_chunk(**pull_kwargs)
         chunk = np.asarray(chunk, dtype=np.float32).T
+        # for i in range(len(chunk)):
+        #     print(f'{i}: {chunk[i][0]}',end=' ')
+        # print('-------------------')
         chunk = chunk[[0,1,4,5],:]
-
         timestamps = np.asarray(timestamps, dtype=np.float32)
         if not len(timestamps):
             print(f"[x] Loss conection to the stream: {selcStream.name()}...")
@@ -58,10 +60,12 @@ def main():
         chunk_1 = block1.step()
         block1.update(chunk_1)
         # Filter data
-        print("Filtered data: ")
-        print(chunk_1)
-        alpha_power = np.mean(chunk_1, axis=1)
-        print(f'Alpha power: {alpha_power}')
+        # print("Filtered data: ")
+        # print(chunk_1)
+        # alpha_power = np.mean(chunk_1, axis=1)
+        # print(f'Alpha power: {alpha_power}')
+        
+        # TODO: integrate the power of 8~13Hz 
 
         mean_alpha_power = np.mean(alpha_power)
         print(f'Mean alpha power: {mean_alpha_power}')
